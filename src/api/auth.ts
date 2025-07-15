@@ -92,7 +92,7 @@ export const getProfile = async () => {
   return response.data;
 };
 
-export const updateProfile = async (data: Partial<RegisterData>) => {
+export const updateProfile = async (data: any) => {
   const response = await api.patch('/users/profile', data);
   return response.data;
 };

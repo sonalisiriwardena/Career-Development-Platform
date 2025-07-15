@@ -59,6 +59,8 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
+    console.log('Update profile request body:', JSON.stringify(req.body, null, 2));
+
     const updates = Object.keys(req.body);
     const allowedUpdates = ['firstName', 'lastName', 'profile', 'company'];
     const isValidOperation = updates.every(update => allowedUpdates.includes(update));
@@ -76,15 +78,48 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
+    // Process updates with proper date conversion
     updates.forEach(update => {
       if (update in req.body) {
-        (user as any)[update] = req.body[update];
+        if (update === 'profile' && req.body.profile) {
+          // Handle profile updates with date conversion
+          const profileData = { ...req.body.profile };
+          
+          // Convert experience dates
+          if (profileData.experience && Array.isArray(profileData.experience)) {
+            profileData.experience = profileData.experience.map((exp: any) => ({
+              ...exp,
+              startDate: exp.startDate ? new Date(exp.startDate) : undefined,
+              endDate: exp.endDate ? new Date(exp.endDate) : undefined
+            }));
+          }
+          
+          // Convert education dates
+          if (profileData.education && Array.isArray(profileData.education)) {
+            profileData.education = profileData.education.map((edu: any) => ({
+              ...edu,
+              startDate: edu.startDate ? new Date(edu.startDate) : undefined,
+              endDate: edu.endDate ? new Date(edu.endDate) : undefined
+            }));
+          }
+          
+          console.log('Processed profile data:', JSON.stringify(profileData, null, 2));
+          (user as any)[update] = profileData;
+        } else {
+          (user as any)[update] = req.body[update];
+        }
       }
     });
     
     await user.save();
-    res.json(user);
+    
+    // Return user without password
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    
+    res.json(userResponse);
   } catch (error: any) {
+    console.error('Profile update error:', error);
     res.status(400).json({ error: error.message });
   }
 };

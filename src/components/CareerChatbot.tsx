@@ -1,5 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useAuthStore } from '../store/authStore';
 import { getTopMatches } from '../utils/matchJobs';
+
+interface JobMatch {
+  score: number;
+  title: string;
+  skills: string[];
+  experience: string;
+  location: string;
+  industry: string;
+  applyLink: string;
+}
+
+interface ChatAnswers {
+  [key: string]: string;
+}
 
 const chatSteps = [
   { question: "Hi there! 👋 I'm your career assistant. What's your name?", key: "name" },
@@ -15,11 +30,12 @@ const chatSteps = [
 ];
 
 export default function CareerChatbot() {
+  const { user } = useAuthStore();
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useState<ChatAnswers>({});
   const [input, setInput] = useState('');
-  const [matches, setMatches] = useState([]);
-  const chatContainerRef = useRef(null);
+  const [matches, setMatches] = useState<JobMatch[]>([]);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   // Auto scroll to bottom when new messages appear
   useEffect(() => {
@@ -40,10 +56,50 @@ export default function CareerChatbot() {
     }
   };
 
+  // Show login prompt if user is not authenticated
+  if (!user) {
+    return (
+      <div className="max-w-md mx-auto my-8 bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-[600px]">
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 py-4 flex-shrink-0">
+          <h2 className="text-center text-white text-2xl font-bold">CareerConnect</h2>
+        </div>
+        
+        <div className="p-6 flex-1 flex flex-col items-center justify-center text-center">
+          <div className="mb-6">
+            <svg className="mx-auto h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h3>
+          <p className="text-gray-600 mb-6">
+            Please sign in or create an account to access the career chatbot and get personalized job recommendations.
+          </p>
+          
+          <div className="space-y-3 w-full">
+            <a
+              href="/login"
+              className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Sign In
+            </a>
+            <a
+              href="/register"
+              className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Create Account
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-md mx-auto my-8 bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-[600px]">
       <div className="bg-gradient-to-r from-blue-500 to-indigo-600 py-4 flex-shrink-0">
         <h2 className="text-center text-white text-2xl font-bold">CareerConnect</h2>
+        <p className="text-center text-blue-100 text-sm">Welcome, {user.firstName}!</p>
       </div>
       
       <div className="p-6 flex-1 flex flex-col overflow-hidden">
